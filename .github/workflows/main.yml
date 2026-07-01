@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source code
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Azure Login
@@ -18,23 +18,25 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Build image in ACR
+      - name: Build Docker image
         run: |
-          az acr login --name ${{ secrets.registry }}
+          docker build -t myacr873624.azurecr.io/azure-vote-front:${{ github.sha }} ./azure-vote
 
-          az acr build \
-            --registry ${{ secrets.registry }} \
-            --image azure-vote-front:${{ github.sha }} \
-            ./azure-vote
+      - name: Login to ACR
+        run: |
+          echo ${{ secrets.AZURE_CREDENTIALS }} | az login --service-principal --username ${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }} --password ${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }} --tenant ${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}
+
+          az acr login --name myacr873624
+
+      - name: Push image
+        run: |
+          docker push myacr873624.azurecr.io/azure-vote-front:${{ github.sha }}
 
       - name: Set AKS context
         uses: azure/aks-set-context@v3
         with:
           resource-group: ${{ secrets.resource_group }}
           cluster-name: ${{ secrets.cluster_name }}
-
-      - name: Setup kubectl
-        uses: azure/setup-kubectl@v3
 
       - name: Deploy to AKS
         uses: Azure/k8s-deploy@v4
@@ -43,4 +45,4 @@ jobs:
           manifests: |
             azure-vote-all-in-one-redis.yaml
           images: |
-            ${{ secrets.registry }}.azurecr.io/azure-vote-front:${{ github.sha }}
+            myacr873624.azurecr.io/azure-vote-front:${{ github.sha }}
