@@ -6,41 +6,20 @@ on:
       - master
 
 jobs:
-  build-deploy:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
       - name: Azure Login
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      # 1. Build + Push a ACR
-      - name: Build and push image to ACR
-        uses: azure/cli@v2
-        with:
-          inlineScript: |
-            az acr build \
-              --registry ${{ secrets.registry }} \
-              --image ${{ secrets.repository }}:latest \
-              .
-
-      # 2. Conectar con AKS
-      - name: Set AKS context
-        uses: azure/aks-set-context@v3
-        with:
-          resource-group: ${{ secrets.resource_group }}
-          cluster-name: ${{ secrets.cluster_name }}
-
-      # 3. Deploy a Kubernetes
-      - name: Deploy to AKS
-        uses: azure/k8s-deploy@v4
-        with:
-          namespace: default
-          images: ${{ secrets.registry }}.azurecr.io/${{ secrets.repository }}:latest
-          manifests: |
-            k8s/deployment.yml
-            k8s/service.yml
+      - name: Build and push ACR
+        run: |
+          az acr build \
+            --registry myacr873624 \
+            --image azure-vote:latest \
+            .
