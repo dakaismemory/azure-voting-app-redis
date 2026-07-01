@@ -32,3 +32,4 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
 
 test github actions
 GitHub Actions test run
+trigger: 1
